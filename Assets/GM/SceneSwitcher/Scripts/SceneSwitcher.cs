@@ -2,77 +2,83 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 
-public class SceneSwitcher : MonoBehaviour
+namespace GM.SceneSwitcher
 {
-    public static SceneSwitcher instance;
-    static SceneSwitchType preType = SceneSwitchType.fade;
-
-    [SerializeField] private Image block;
-    [SerializeField] private Animator ani;
-    [SerializeField] private float duration;
-    string scene;
-
-    public float durationTime
+    public class SceneSwitcher : MonoBehaviour
     {
-        get
+        public static SceneSwitcher instance;
+        static SceneSwitchType preType = SceneSwitchType.fade;
+
+        [SerializeField] private Image block;
+        [SerializeField] private Animator ani;
+        [SerializeField] private float duration;
+        [SerializeField] private UnityEvent onChange;
+        string scene;
+
+        public float durationTime
         {
-            return 1.0f / ani.speed;
+            get
+            {
+                return 1.0f / ani.speed;
+            }
+            set
+            {
+                ani.speed = 1.0f / value;
+            }
         }
-        set
+
+        private void Awake()
         {
-            ani.speed = 1.0f / value;
+            scene = "";
+            instance = this;
+            durationTime = duration;
+            block.gameObject.SetActive(true);
+            ani.Play("p " + preType);
         }
-    }
-
-    private void Awake()
-    {
-        scene = "";
-        instance = this;
-        durationTime = duration;
-        block.gameObject.SetActive(true);
-        ani.Play("p " + preType);
-    }
-    public void Switch()
-    {
-        scene = SceneManager.GetActiveScene().name;
-        Switch(SceneSwitchType.fade);
-    }
-    public void Switch(string name, SceneSwitchType type = SceneSwitchType.fade)
-    {
-        scene = name;
-        Switch(type);
-    }
-    public void Switch(int index, SceneSwitchType type = SceneSwitchType.fade)
-    {
-        Switch(SceneManager.GetSceneAt(index).name, type);
-    }
-    void Switch(SceneSwitchType type)
-    {
-        gameObject.SetActive(true);
-        block.gameObject.SetActive(true);
-        preType = type;
-        ani.Play(type.ToString());
-    }
-
-
-
-    public void AnimationOver(int isStart)
-    {
-        if (isStart == 0)
+        public void Switch()
         {
-            gameObject.SetActive(false);
+            scene = SceneManager.GetActiveScene().name;
+            Switch(SceneSwitchType.fade);
         }
-        else
+        public void Switch(string name, SceneSwitchType type = SceneSwitchType.fade)
         {
-            SceneManager.LoadScene(scene);
+            scene = name;
+            Switch(type);
+        }
+        public void Switch(int index, SceneSwitchType type = SceneSwitchType.fade)
+        {
+            Switch(SceneManager.GetSceneAt(index).name, type);
+        }
+        void Switch(SceneSwitchType type)
+        {
+            gameObject.SetActive(true);
+            block.gameObject.SetActive(true);
+            preType = type;
+            ani.Play(type.ToString());
+        }
+
+
+
+        public void AnimationOver(int isStart)
+        {
+            if (isStart == 0)
+            {
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                onChange.Invoke();
+                SceneManager.LoadScene(scene);
+            }
         }
     }
+
+    public enum SceneSwitchType
+    {
+        fade
+    }
+
+
 }
-
-public enum SceneSwitchType
-{
-    fade
-}
-
-
